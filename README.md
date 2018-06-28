@@ -12,7 +12,7 @@ other modules.
 
 It runs fine when called directly with `./index` from the command line:
 
-```sh
+```
 $ ./index
 ? Who is your favorite Teletubby? (Use arrow keys)
 ...
@@ -22,7 +22,7 @@ $ ./index
 
 It also runs fine when globally linked and run using the `bin` entry point:
 
-```sh
+```
 $ yarn link
 yarn link v1.7.0
 success Registered "create-repro-ts-node-issue".
@@ -32,7 +32,7 @@ info You can now run `yarn link "create-repro-ts-node-issue"` in the projects wh
 
 Then run from any directory on the file system:
 
-```sh
+```
 $ create-repo-ts-node-issue
 ? Who is your favorite Teletubby? (Use arrow keys)
 ...
@@ -53,7 +53,7 @@ To achieve this, I had to publish this repo into the
 
 Then when running the `yarn create` command, we get:
 
-```sh
+```
 $ yarn create repro-ts-node-issue
 yarn create v1.7.0
 [1/4] 🔍  Resolving packages...
@@ -90,7 +90,7 @@ Output:
 To reproduce this, we went on using a globally installed version, and got the
 same result:
 
-```sh
+```
 $ yarn global add create-repro-ts-node-issue
 yarn global v1.7.0
 [1/4] 🔍  Resolving packages...
@@ -119,9 +119,31 @@ SyntaxError: Unexpected token import
     at require (internal/module.js:11:18)
 ```
 
+## Attempts
+
+- **v0.1.0**: contains a [`tsconfig.json`](https://github.com/astorije/create-repro-ts-node-issue/blob/v0.1.0/tsconfig.json) similar to the case we are encountering in our private repo. Same context, exact same issue.
+- **v0.2.0**: [Tried with `"target": "es5"` in `tsconfig.json`](https://github.com/astorije/create-repro-ts-node-issue/commit/5ae9bd9541b0de7ce027f2cd3a6af9d461f9e814)
+- **v0.3.0**: [Tried with `"module": "commonjs"` in `tsconfig.json`](https://github.com/astorije/create-repro-ts-node-issue/commit/43546c1defa5cecf85012129801bd891e984bca1)
+- **v0.4.0**: [Tried with both `"target": "es5"` and `"module": "commonjs"` in `tsconfig.json`](https://github.com/astorije/create-repro-ts-node-issue/commit/ec5d9be15514e9fdd4251a65d7592fd2fb32b027)
+
+It looks as though [`require('src')` in `index.js`](https://github.com/astorije/create-repro-ts-node-issue/blob/3d3f9db59a2a9721177df627b0f230c2577f7b9a/index.js#L7) correctly loads `src/index.ts` but does not transpile in a Node module resolution context **when installed globally only**.
+
+The `tsconfig.json` file passed in the `project` option is correctly found, because pointing to a fake location does indeed produce an error:
+
+```
+TSError: ⨯ Unable to compile TypeScript:
+error TS5058: The specified path does not exist: '/Users/astorije/.config/yarn/global/node_modules/create-repro-ts-node-issue/foobar-tsconfig.json'.
+```
+
+`ts-node` is correctly registered for future `.ts` file, because not specifying the `project` option altogether does indeed produce an error since there is no `./src/index.js` file:
+
+```
+Error: Cannot find module './src'
+```
+
 ## Versions
 
-```sh
+```
 $ node --version
 v8.11.3
 
